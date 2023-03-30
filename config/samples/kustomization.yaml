@@ -1,0 +1,5 @@
+## Append samples you want in your CSV to this file as resources ##
+resources:
+- autoscaling_v2_horizontalpodautoscaler.yaml
+- apps_v1_statefulset.yaml
+#+kubebuilder:scaffold:manifestskustomizesamples
