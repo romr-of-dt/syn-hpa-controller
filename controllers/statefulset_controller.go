@@ -49,7 +49,6 @@ var (
 	statefulSetLabelSelector = metav1.LabelSelector{
 		MatchLabels: map[string]string{
 			"app.kubernetes.io/component":  "synthetic",
-			"app.kubernetes.io/created-by": "dynakube",
 			"app.kubernetes.io/managed-by": "dynatrace-operator",
 			"app.kubernetes.io/name":       "activegate",
 		},
