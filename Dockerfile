@@ -1,12 +1,11 @@
 # Build the manager binary
-FROM golang:1.20.2 as builder
+FROM golang:1.20.2 as go-base
 ARG TARGETOS
 ARG TARGETARCH
 
 WORKDIR /workspace
 # Copy the Go Modules manifests
-COPY go.mod go.mod
-COPY go.sum go.sum
+COPY go.mod go.sum ./
 # cache deps before building and copying source so that we don't need to re-download as much
 # and so that source changes don't invalidate our downloaded layer
 RUN go mod download
@@ -20,11 +19,25 @@ COPY controllers/ controllers/
 # was called. For example, if we call make docker-build in a local env which has the Apple Silicon M1 SO
 # the docker BUILDPLATFORM arg will be linux/arm64 when for Apple x86 it will be linux/amd64. Therefore,
 # by leaving it empty we can ensure that the container and binary shipped on it will have the same platform.
-RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -a -o manager main.go
+FROM go-base AS builder
+RUN CGO_ENABLED=0 \
+ GOOS=${TARGETOS:-linux} \
+ GOARCH=${TARGETARCH} \
+ go build -a -o manager
 
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
 FROM gcr.io/distroless/static:nonroot
+LABEL name="Dynatrace Synthetic Locaction Controller" \
+      vendor="Dynatrace LLC" \
+      maintainer="Dynatrace LLC" \
+      version="1.x" \
+      release="1" \
+      url="https://www.dynatrace.com" \
+      summary="Dynatrace is an all-in-one, zero-config monitoring platform designed by and for cloud natives. It is powered by artificial intelligence that identifies performance problems and pinpoints their root causes in seconds." \
+      description="Synthetic Location Apt to Auto-scale" \
+      io.k8s.description="Dynatrace Synthetic Locaction Controller Image" \
+      quay.expires-after="14d"
 WORKDIR /
 COPY --from=builder /workspace/manager .
 USER 65532:65532

@@ -19,9 +19,9 @@ package controllers
 import (
 	"context"
 
-	//"github.com/romr-of-dt/syn-hpa-controller/src/controllers/autoscaler"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
+	"github.com/romr-of-dt/syn-hpa-controller/controllers/autoscaler"
 	"github.com/romr-of-dt/syn-hpa-controller/controllers/kubejects"
 	appsv1 "k8s.io/api/apps/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -77,8 +77,8 @@ func NewStatefulSetReconciler(
 	}
 }
 
-//+kubebuilder:rbac:groups=apps,namespace=dynatrace,resources=statefulsets,verbs=get;list;watch
-//+kubebuilder:rbac:groups=autoscaling,namespace=dynatrace,resources=horizontalpodautoscalers,verbs=get;list;create;update;delete
+//+kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=get;list;watch
+//+kubebuilder:rbac:groups=autoscaling,resources=horizontalpodautoscalers,verbs=get;list;create;update;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -120,16 +120,14 @@ func (r *StatefulSetReconciler) reconcileAutoscaler(toScale *appsv1.StatefulSet)
 	case k8serrors.IsNotFound(err):
 		err = nil
 	case deployed != nil:
-		logger.Info("statefulset to reconcile", "name", deployed.Name)
-		/*
-			err = autoscaler.NewReconciler(
-				context.TODO(),
-				r.apiReader,
-				r.client,
-				r.scheme,
-				deployed,
-			).Reconcile()
-		*/
+		logger.Info("found statefulset to reconcile")
+		err = autoscaler.NewReconciler(
+			context.TODO(),
+			r.statefulSets.Reader,
+			r.statefulSets.Client,
+			r.statefulSets.Scheme,
+			deployed,
+		).Reconcile()
 	}
 
 	return errors.WithStack(err)

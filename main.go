@@ -19,14 +19,13 @@ package main
 import (
 	"flag"
 	"os"
-	"runtime/debug"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
 	appsv1 "k8s.io/api/apps/v1"
-	scalingv2 "k8s.io/api/autoscaling/v2"
+	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -46,7 +45,7 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(appsv1.AddToScheme(scheme))
-	utilruntime.Must(scalingv2.AddToScheme(scheme))
+	utilruntime.Must(autoscalingv2.AddToScheme(scheme))
 
 	//+kubebuilder:scaffold:scheme
 }
@@ -92,20 +91,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	revision := "unknown"
-	info, isOk := debug.ReadBuildInfo()
-	if isOk {
-		for _, s := range info.Settings {
-			if s.Key == "vcs.revision" {
-				revision = s.Value
-				break
-			}
-		}
-	}
-	setupLog.Info(
-		"controller", "synthetic-hpa",
-		"git-commit", revision)
-
 	reconclier := controllers.NewStatefulSetReconciler(
 		mgr.GetAPIReader(),
 		mgr.GetClient(),
@@ -116,6 +101,8 @@ func main() {
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder
+
+	setupLog.Info("controller for synthetic horizontalpodautoscaler")
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up health check")
